@@ -1,3 +1,9 @@
+// ============================================================================
+// ARQUITETURA DO BACK-END - SISTEMA ACADEMIA
+// ============================================================================
+// Este arquivo é o ponto de entrada da aplicação ASP.NET Core Web API.
+// Aqui configuramos o pipeline de processamento, injeção de dependência e segurança.
+
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -7,44 +13,57 @@ using SistemaAcademiaAPI.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Configuração do Banco de Dados (agora usando SQLite)
+// 1. PERSISTÊNCIA DE DADOS (Entity Framework Core)
+// Utilizamos o SQLite por sua portabilidade e facilidade de deploy em ambientes de desenvolvimento.
+// O padrão Repository/Unit of Work é implicitamente gerenciado pelo DbContext do EF Core.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 2. Configuração dos Controllers e JSON (Evita loops em relacionamentos N:N)
+// 2. CONFIGURAÇÃO DE CONTROLLERS E SERIALIZAÇÃO JSON
+// Implementamos o IgnoreCycles para tratar referências circulares em relacionamentos N:N
+// (ex: Aluno tem Treinos e Treino tem Alunos), garantindo que o JSON não entre em loop infinito.
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 
-// 3. CORS (Ajuste a URL conforme o seu Front-end)
+// 3. SEGURANÇA - POLÍTICA DE CORS (Cross-Origin Resource Sharing)
+// Essencial para permitir que o Front-end (React/Vite) em uma porta diferente acesse a API com segurança.
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirTudo", policy =>
-        policy.AllowAnyOrigin() // Em produção, substitua pelo domínio do front
+        policy.AllowAnyOrigin() 
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
 
-// 4. Configuração de Autenticação JWT
+// 4. AUTENTICAÇÃO E AUTORIZAÇÃO (JWT - JSON Web Token)
+// Escolhemos JWT por ser um padrão de mercado (RFC 7519) stateless, o que garante 
+// escalabilidade ao servidor, já que não precisamos manter sessões em memória.
 var key = Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "Chave_Secreta_De_Seguranca_Padrao_32_Chars");
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuerSigningKey = true,
+            ValidateIssuerSigningKey = true, // Verifica se a assinatura é válida
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ValidateIssuer = false,
             ValidateAudience = false,
-            ClockSkew = TimeSpan.Zero
+            ClockSkew = TimeSpan.Zero // Remove tolerância de tempo para expiração rígida do token
         };
     });
 
-// 5. Swagger com suporte a Token JWT
+// 5. DOCUMENTAÇÃO TÉCNICA (Swagger/OpenAPI)
+// Swagger configurado para suportar autenticação Bearer, facilitando testes de segurança 
+// e servindo como documentação viva para o desenvolvimento do Front-end.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Sistema Academia API", Version = "v1" });
+    c.SwaggerDoc("v1", new OpenApiInfo { 
+        Title = "Sistema Academia API", 
+        Version = "v1",
+        Description = "API de Gestão de Academia com autenticação JWT e SQLite."
+    });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -67,21 +86,27 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configuração do Pipeline de Requisições HTTP
+// ============================================================================
+// CONFIGURAÇÃO DO MIDDLEWARE PIPELINE
+// ============================================================================
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+// Redirecionamento HTTPS para garantir que os dados trafeguem de forma criptografada.
 app.UseHttpsRedirection();
 
-// IMPORTANTE: UseCors deve vir ANTES de UseAuthentication
+// O Middleware de CORS deve vir antes da Autenticação.
 app.UseCors("PermitirTudo");
 
+// Ativação da camada de segurança de identidade.
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Mapeamento automático dos Controllers baseados em atributos.
 app.MapControllers();
 
-app.Run();
+app.Run();
