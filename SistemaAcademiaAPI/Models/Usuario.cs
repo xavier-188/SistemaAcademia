@@ -12,6 +12,6 @@ namespace SistemaAcademiaAPI.Models
         public string Login { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "A senha é obrigatória.")]
-        public string Senha { get; set; } = string.Empty;
+        public string SenhaHash { get; set; } = string.Empty;
     }
 }

@@ -1,98 +1,114 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SistemaAcademiaAPI.Models;
 using SistemaAcademiaAPI.Data;
+using SistemaAcademiaAPI.DTOs;
+using SistemaAcademiaAPI.Models;
 
-namespace SistemaAcademiaAPI.Controllers
-{
-    [Authorize]
-    [Route("api/[controller]")]
-    [ApiController]
-    public class TreinosController : ControllerBase
-    {
-        private readonly AppDbContext _context;
+namespace SistemaAcademiaAPI.Controllers;
 
-        public TreinosController(AppDbContext context)
-        {
-            _context = context;
-        }
+[Authorize]
+[Route("api/[controller]")]
+[ApiController]
+public class TreinosController : ControllerBase {
+    private readonly AppDbContext _context;
 
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Treino>>> GetTreinos()
-        {
-            return await _context.Treinos.Include(t => t.Aluno).ToListAsync();
-        }
+    public TreinosController(AppDbContext context) {
+        _context = context;
+    }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Treino>> GetTreino(int id)
-        {
-            var treino = await _context.Treinos
-                                       .Include(t => t.Aluno)
-                                       .FirstOrDefaultAsync(t => t.Id == id);
+    [HttpGet]
+    public async Task<IActionResult> GetTreinos() {
+        var treinos = await _context.Treinos
+            .Include(t => t.Aluno)
+            .Select(t => new TreinoDto {
+                Id = t.Id,
+                Nome = t.Nome,
+                Descricao = t.Descricao,
+                AlunoId = t.AlunoId,
+                AlunoNome = t.Aluno!.Nome
+            })
+            .ToListAsync();
 
-            if (treino == null)
-                return NotFound(new { mensagem = "Treino não encontrado." });
+        return Ok(treinos);
+    }
 
-            return treino;
-        }
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetTreino(int id) {
+        var treino = await _context.Treinos
+            .Include(t => t.Aluno)
+            .FirstOrDefaultAsync(t => t.Id == id);
 
-        [HttpPost]
-        public async Task<ActionResult<Treino>> PostTreino(Treino treino)
-        {
-            var alunoExiste = await _context.Alunos.AnyAsync(a => a.Id == treino.AlunoId);
-            if (!alunoExiste)
-                return BadRequest(new { mensagem = "O Aluno informado não existe." });
+        if (treino == null)
+            return NotFound(new { mensagem = "Treino não encontrado." });
 
-            _context.Treinos.Add(treino);
-            await _context.SaveChangesAsync();
+        return Ok(new TreinoDto {
+            Id = treino.Id,
+            Nome = treino.Nome,
+            Descricao = treino.Descricao,
+            AlunoId = treino.AlunoId,
+            AlunoNome = treino.Aluno!.Nome
+        });
+    }
 
-            return CreatedAtAction(nameof(GetTreino), new { id = treino.Id }, treino);
-        }
+    [HttpPost]
+    public async Task<IActionResult> PostTreino(TreinoCreateDto dto) {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutTreino(int id, Treino treino)
-        {
-            if (id != treino.Id)
-                return BadRequest(new { mensagem = "O ID da URL não corresponde ao ID do corpo da requisição." });
+        var alunoExiste = await _context.Alunos.AnyAsync(a => a.Id == dto.AlunoId);
+        if (!alunoExiste)
+            return BadRequest(new { mensagem = "O Aluno informado não existe." });
 
-            var alunoExiste = await _context.Alunos.AnyAsync(a => a.Id == treino.AlunoId);
-            if (!alunoExiste)
-                return BadRequest(new { mensagem = "O Aluno informado não existe." });
+        var treino = new Treino {
+            Nome = dto.Nome,
+            Descricao = dto.Descricao,
+            AlunoId = dto.AlunoId
+        };
 
-            _context.Entry(treino).State = EntityState.Modified;
+        _context.Treinos.Add(treino);
+        await _context.SaveChangesAsync();
 
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!TreinoExists(id))
-                    return NotFound(new { mensagem = "Treino não encontrado." });
-                else
-                    throw;
-            }
+        return CreatedAtAction(nameof(GetTreino), new { id = treino.Id }, new TreinoDto {
+            Id = treino.Id,
+            Nome = treino.Nome,
+            Descricao = treino.Descricao,
+            AlunoId = treino.AlunoId,
+            AlunoNome = (await _context.Alunos.FindAsync(treino.AlunoId))!.Nome
+        });
+    }
 
-            return NoContent();
-        }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> PutTreino(int id, TreinoUpdateDto dto) {
+        if (!ModelState.IsValid)
+            return BadRequest(ModelState);
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTreino(int id)
-        {
-            var treino = await _context.Treinos.FindAsync(id);
-            if (treino == null)
-                return NotFound(new { mensagem = "Treino não encontrado." });
+        var treino = await _context.Treinos.FindAsync(id);
+        if (treino == null)
+            return NotFound(new { mensagem = "Treino não encontrado." });
 
-            _context.Treinos.Remove(treino);
-            await _context.SaveChangesAsync();
+        var alunoExiste = await _context.Alunos.AnyAsync(a => a.Id == dto.AlunoId);
+        if (!alunoExiste)
+            return BadRequest(new { mensagem = "O Aluno informado não existe." });
 
-            return NoContent();
-        }
+        treino.Nome = dto.Nome;
+        treino.Descricao = dto.Descricao;
+        treino.AlunoId = dto.AlunoId;
 
-        private bool TreinoExists(int id)
-        {
-            return _context.Treinos.Any(e => e.Id == id);
-        }
+        await _context.SaveChangesAsync();
+
+        return Ok(new { mensagem = "Treino atualizado com sucesso." });
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteTreino(int id) {
+        var treino = await _context.Treinos.FindAsync(id);
+        if (treino == null)
+            return NotFound(new { mensagem = "Treino não encontrado." });
+
+        _context.Treinos.Remove(treino);
+        await _context.SaveChangesAsync();
+
+        return NoContent();
     }
 }

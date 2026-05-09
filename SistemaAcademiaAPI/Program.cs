@@ -14,10 +14,12 @@ using SistemaAcademiaAPI.Data;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. PERSISTÊNCIA DE DADOS (Entity Framework Core)
-// Utilizamos o SQLite por sua portabilidade e facilidade de deploy em ambientes de desenvolvimento.
 // O padrão Repository/Unit of Work é implicitamente gerenciado pelo DbContext do EF Core.
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        new MySqlServerVersion(new Version(8, 0, 0))
+    ));
 
 // 2. CONFIGURAÇÃO DE CONTROLLERS E SERIALIZAÇÃO JSON
 // Implementamos o IgnoreCycles para tratar referências circulares em relacionamentos N:N
@@ -109,4 +111,4 @@ app.UseAuthorization();
 // Mapeamento automático dos Controllers baseados em atributos.
 app.MapControllers();
 
-app.Run();
+app.Run();
