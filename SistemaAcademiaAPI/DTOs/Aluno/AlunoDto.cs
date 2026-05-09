@@ -14,8 +14,6 @@ public class AlunoCreateDto {
     [Required(ErrorMessage = "O telefone é obrigatório.")]
     public string Telefone { get; set; } = string.Empty;
 
-    public DateTime DataNascimento { get; set; }
-
     [Required(ErrorMessage = "O aluno deve estar vinculado a um plano.")]
     public int PlanoId { get; set; }
 }
@@ -27,7 +25,6 @@ public class AlunoDto {
     public string Nome { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Telefone { get; set; } = string.Empty;
-    public DateTime DataNascimento { get; set; }
     public int PlanoId { get; set; }
     public string PlanoNome { get; set; } = string.Empty;
 }

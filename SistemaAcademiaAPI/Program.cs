@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SistemaAcademiaAPI.Data;
+using SistemaAcademiaAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,7 +34,7 @@ builder.Services.AddControllers()
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("PermitirTudo", policy =>
-        policy.AllowAnyOrigin() 
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod());
 });
@@ -61,10 +62,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { 
-        Title = "Sistema Academia API", 
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Sistema Academia API",
         Version = "v1",
-        Description = "API de Gestão de Academia com autenticação JWT e SQLite."
+        Description = "API RESTful para gestão completa de academia.\n\n" +
+        "FUNCIONALIDADES: Alunos | Planos | Treinos | Autenticação JWT\n\n" +
+        "COMO USAR: 1) Registre um usuário  2) Faça login e copie o token  " +
+        "3) Clique em Authorize e cole: Bearer {seu_token}\n\n" +
+        "TECNOLOGIAS: ASP.NET Core 8 | Entity Framework Core | MySQL | JWT"
     });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -85,6 +91,7 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+builder.Services.AddSingleton<TokenService>();
 
 var app = builder.Build();
 
