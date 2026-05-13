@@ -27,4 +27,6 @@ public class AlunoDto {
     public string Telefone { get; set; } = string.Empty;
     public int PlanoId { get; set; }
     public string PlanoNome { get; set; } = string.Empty;
+
+     public List<TreinoDto> Treinos { get; set; } = new();
 }
