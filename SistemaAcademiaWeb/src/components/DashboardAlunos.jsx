@@ -1,116 +1,248 @@
 import React, {useState, useEffect} from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {Users, Award, Activity, Plus, Search, Trash2, Edit3, X, Loader2} from "lucide-react";
+import {Users, Award, Activity, Plus, Trash2, Edit3, X, Loader2} from "lucide-react";
 import api from "../services/api";
 import './DashboardAlunos.css';
 
 export default function DashboardAlunos() {
     const [alunos, setAlunos] = useState([]);
     const [planos, setPlanos] = useState([]);
+    const [treinos, setTreinos] = useState([]);
     const [totalTreinos, setTotalTreinos] = useState(0);
     const [loading, setLoading] = useState(true);
     const [erro, setErro] = useState('');
+    const [login, setLogin] = useState('');
+    const [senha, setSenha] = useState('');
+    const [autenticado, setAutenticado] = useState(!!localStorage.getItem('token'));
  
-    //busca e filtro
+    // busca e filtro
     const [busca, setBusca] = useState('');
 
     // Modal cadastro
-const [modalAberto, setModalAberto] = useState(false);
-const [alunoEditando, setAlunoEditando] = useState(null);
+    const [modalAberto, setModalAberto] = useState(false);
+    const [modalTipo, setModalTipo] = useState('');
+    const [itemEditando, setItemEditando] = useState(null);
+    const [modalErro, setModalErro] = useState('');
 
-       const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState({
         nome: '',
         email: '',
         telefone: '',
-        planoId: ''
+        planoId: '',
+        preco: '',
+        descricao: '',
+        alunoId: ''
     });
 
-       const carregarDados = async () => {
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        setAutenticado(false);
+        setAlunos([]);
+        setPlanos([]);
+        setTreinos([]);
+        setTotalTreinos(0);
+        setLoading(false);
+    };
+
+    const carregarDados = async () => {
         setLoading(true);
         setErro('');
         try {
             // fazendo requisicao para buscar alunos planos e treinos
             const [alunosRes, planosRes, treinosRes] = await Promise.all([
-                api.get('/Alunos').catch(() => ({ data: [] })), 
-                api.get('/Planos').catch(() => ({ data: [] })), 
-                api.get('/Treinos').catch(() => ({ data: [] })), 
+                api.get('/Alunos'), 
+                api.get('/Planos'), 
+                api.get('/Treinos'), 
             ]);
             
             setAlunos(alunosRes.data);
             setPlanos(planosRes.data);
+            setTreinos(treinosRes.data);
             setTotalTreinos(treinosRes.data.length);
         } catch (err) {
             console.error(err);
-            setErro('Erro ao carregar dados. Por favor, tente novamente mais tarde.');
+            if (err?.response?.status === 401 || err?.response?.status === 403) {
+                setErro('Sessão expirada ou não autorizada. Faça login novamente.');
+                handleLogout();
+            } else {
+                setErro('Erro ao carregar dados. Por favor, tente novamente mais tarde.');
+            }
         } finally {
             setLoading(false);
         }
     };
 
     useEffect(() => {
-        carregarDados();
+        const token = localStorage.getItem('token');
+        if (token) {
+            carregarDados();
+        } else {
+            setLoading(false);
+        }
     }, []);
 
-    //funcao de acao
+    // funções de ação
+    const handleDeletarAluno = async (id) => {
+        if (!window.confirm('Tem certeza que deseja deletar este aluno?')) return;
 
-    //deletar aluno
-    const handleDeletar = async (id) => {
-        if (window.confirm('Tem certeza que deseja deletar este aluno?')) {
-            try {
-                await api.delete(`/alunos/${id}`);
-                setAlunos(alunos.filter(aluno => aluno.id !== id));
-            } catch (err) {
-                console.error(err);
-                alert('Erro ao deletar aluno. Por favor, tente novamente.');
-            }
+        try {
+            await api.delete(`/Alunos/${id}`);
+            setAlunos(alunos.filter(aluno => aluno.id !== id));
+            setTreinos(treinos.filter(treino => treino.alunoId !== id));
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao deletar aluno. Por favor, tente novamente.');
         }
     };
 
-    // modal de edicao
-    const abrirModalEditar = (aluno) => {
-        setAlunoEditando(aluno);
-        setFormData({
-            nome: aluno.nome,
-            email: aluno.email,
-            telefone: aluno.telefone,
-            planoId: aluno.planoId
-        });
-        setModalAberto(true);
+    const handleDeletarPlano = async (id) => {
+        if (!window.confirm('Tem certeza que deseja deletar este plano?')) return;
+
+        try {
+            await api.delete(`/Planos/${id}`);
+            setPlanos(planos.filter(plano => plano.id !== id));
+        } catch (err) {
+            console.error(err);
+            const mensagem = err?.response?.data?.mensagem || 'Erro ao deletar plano. Por favor, tente novamente.';
+            alert(mensagem);
+        }
     };
 
-    const abrirModalCriar = () => {
-        setAlunoEditando(null);
+    const handleDeletarTreino = async (id) => {
+        if (!window.confirm('Tem certeza que deseja deletar este treino?')) return;
+
+        try {
+            await api.delete(`/Treinos/${id}`);
+            setTreinos(treinos.filter(treino => treino.id !== id));
+            setTotalTreinos(prev => Math.max(prev - 1, 0));
+        } catch (err) {
+            console.error(err);
+            alert('Erro ao deletar treino. Por favor, tente novamente.');
+        }
+    };
+
+    const abrirModalCriar = (tipo) => {
+        setModalTipo(tipo);
+        setItemEditando(null);
+        setModalErro('');
         setFormData({
             nome: '',
             email: '',
             telefone: '',
-            planoId: planos.length > 0 ? planos[0].id : '' // seleciona o primeiro plano se existir
+            planoId: tipo === 'aluno' && planos.length > 0 ? planos[0].id : '',
+            preco: '',
+            descricao: '',
+            alunoId: tipo === 'treino' && alunos.length > 0 ? alunos[0].id : ''
         });
         setModalAberto(true);
-    }
+    };
 
-    // salvar alunos envia o fomulario de criacao ou edicao
+    const abrirModalEditar = (tipo, item) => {
+        setModalTipo(tipo);
+        setItemEditando(item);
+        setModalErro('');
+        setFormData({
+            nome: item.nome || '',
+            email: item.email || '',
+            telefone: item.telefone || '',
+            planoId: item.planoId !== undefined ? String(item.planoId) : (planos.length > 0 ? String(planos[0].id) : ''),
+            preco: item.preco !== undefined ? String(item.preco) : '',
+            descricao: item.descricao || '',
+            alunoId: item.alunoId !== undefined ? String(item.alunoId) : (alunos.length > 0 ? String(alunos[0].id) : '')
+        });
+        setModalAberto(true);
+    };
+
+    const fecharModal = () => {
+        setModalAberto(false);
+        setModalTipo('');
+        setItemEditando(null);
+        setModalErro('');
+    };
+
     const handleSalvar = async (e) => {
         e.preventDefault();
-        try {
-            const payload = {
-                nome: formData.nome,
-                email: formData.email,
-                telefone: formData.telefone,
-                planoId: parseInt(formData.planoId)
-            };
+        setModalErro('');
 
-            if (alunoEditando) {
-                await api.put(`/alunos/${alunoEditando.id}`, payload);
-            } else {
-                await api.post('/alunos', payload);
+        try {
+            if (modalTipo === 'aluno') {
+                const payload = {
+                    nome: formData.nome,
+                    email: formData.email,
+                    telefone: formData.telefone,
+                    planoId: parseInt(formData.planoId, 10)
+                };
+
+                if (itemEditando) {
+                    await api.put(`/Alunos/${itemEditando.id}`, payload);
+                } else {
+                    await api.post('/Alunos', payload);
+                }
             }
 
-            setModalAberto(false);
+            if (modalTipo === 'plano') {
+                const preco = parseFloat(formData.preco.replace(',', '.'));
+                if (Number.isNaN(preco)) {
+                    setModalErro('Preço inválido. Informe um valor numérico.');
+                    return;
+                }
+
+                const payload = {
+                    nome: formData.nome,
+                    preco
+                };
+
+                if (itemEditando) {
+                    await api.put(`/Planos/${itemEditando.id}`, payload);
+                } else {
+                    await api.post('/Planos', payload);
+                }
+            }
+
+            if (modalTipo === 'treino') {
+                const payload = {
+                    nome: formData.nome,
+                    descricao: formData.descricao,
+                    alunoId: parseInt(formData.alunoId, 10)
+                };
+
+                if (itemEditando) {
+                    await api.put(`/Treinos/${itemEditando.id}`, payload);
+                } else {
+                    await api.post('/Treinos', payload);
+                }
+            }
+
+            fecharModal();
             carregarDados();
         } catch (err) {
             console.error(err);
-            alert('Erro ao salvar aluno. Por favor, tente novamente.');
+            const mensagem = err?.response?.data?.mensagem || 'Erro ao salvar. Por favor, tente novamente.';
+            setModalErro(mensagem);
+        }
+    };
+
+    const handleLoginSubmit = async (e) => {
+        e.preventDefault();
+        setErro('');
+        setLoading(true);
+
+        try {
+            const response = await api.post('/Auth/login', {
+                login,
+                senha
+            });
+
+            localStorage.setItem('token', response.data.token);
+            setAutenticado(true);
+            setLogin('');
+            setSenha('');
+            carregarDados();
+        } catch (err) {
+            console.error(err);
+            const mensagem = err?.response?.data?.mensagem || 'Erro ao fazer login. Verifique suas credenciais.';
+            setErro(mensagem);
+            setLoading(false);
         }
     };
 
@@ -119,6 +251,50 @@ const [alunoEditando, setAlunoEditando] = useState(null);
         aluno.email.toLowerCase().includes(busca.toLowerCase())
     );
 
+    if (!autenticado) {
+        return (
+            <div className="dashboard-container">
+                <div className="dashboard-header">
+                    <h1>Entrar na API da Academia</h1>
+                    <p>Faça login para sincronizar os dados do dashboard com a API.</p>
+                </div>
+                <div className="students-section">
+                    <div className="form-card">
+                        <form onSubmit={handleLoginSubmit}>
+                            <div className="form-group">
+                                <label htmlFor="login">Login</label>
+                                <input
+                                    type="text"
+                                    id="login"
+                                    value={login}
+                                    required
+                                    className="form-control"
+                                    onChange={(e) => setLogin(e.target.value)}
+                                />
+                            </div>
+                            <div className="form-group">
+                                <label htmlFor="senha">Senha</label>
+                                <input
+                                    type="password"
+                                    id="senha"
+                                    value={senha}
+                                    required
+                                    className="form-control"
+                                    onChange={(e) => setSenha(e.target.value)}
+                                />
+                            </div>
+                            {erro && <div className="error-msg">{erro}</div>}
+                            <div className="modal-actions">
+                                <button type="submit" className="btn-primary" disabled={loading}>
+                                    {loading ? 'Entrando...' : 'Entrar'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
    return (
     <div className="dashboard-container">
@@ -179,7 +355,7 @@ const [alunoEditando, setAlunoEditando] = useState(null);
               />
             </div>
             {/* Botão Novo Aluno */}
-            <button className="btn-primary" onClick={abrirModalCriar}>
+            <button className="btn-primary" onClick={() => abrirModalCriar('aluno')}>
               <Plus size={18} /> Novo Aluno
             </button>
           </div>
@@ -227,14 +403,14 @@ const [alunoEditando, setAlunoEditando] = useState(null);
                         <button
                           className="btn-icon edit"
                           title="Editar"
-                          onClick={() => abrirModalEditar(aluno)}
+                          onClick={() => abrirModalEditar('aluno', aluno)}
                         >
                           <Edit3 size={16} />
                         </button>
                         <button
                           className="btn-icon delete"
                           title="Excluir"
-                          onClick={() => handleDeletar(aluno.id)}
+                          onClick={() => handleDeletarAluno(aluno.id)}
                         >
                           <Trash2 size={16} />
                         </button>
@@ -247,7 +423,88 @@ const [alunoEditando, setAlunoEditando] = useState(null);
           </div>
         )}
       </div>
-      {/* --- MODAL DE CRIAR OU EDITAR ALUNO --- */}
+
+      <div className="students-section">
+        <div className="section-header">
+          <h2>Planos</h2>
+          <button className="btn-primary" onClick={() => abrirModalCriar('plano')}>
+            <Plus size={18} /> Novo Plano
+          </button>
+        </div>
+
+        <div className="table-responsive">
+          <table className="students-table">
+            <thead>
+              <tr>
+                <th>Nome do Plano</th>
+                <th>Preço</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {planos.map((plano) => (
+                <tr key={plano.id}>
+                  <td style={{ fontWeight: '500', color: 'var(--text-h)' }}>{plano.nome}</td>
+                  <td>R$ {plano.preco.toFixed(2)}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button className="btn-icon edit" title="Editar" onClick={() => abrirModalEditar('plano', plano)}>
+                        <Edit3 size={16} />
+                      </button>
+                      <button className="btn-icon delete" title="Excluir" onClick={() => handleDeletarPlano(plano.id)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="students-section">
+        <div className="section-header">
+          <h2>Treinos</h2>
+          <button className="btn-primary" onClick={() => abrirModalCriar('treino')}>
+            <Plus size={18} /> Novo Treino
+          </button>
+        </div>
+
+        <div className="table-responsive">
+          <table className="students-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Descrição</th>
+                <th>Aluno</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              {treinos.map((treino) => (
+                <tr key={treino.id}>
+                  <td style={{ fontWeight: '500', color: 'var(--text-h)' }}>{treino.nome}</td>
+                  <td>{treino.descricao}</td>
+                  <td>{treino.alunoNome}</td>
+                  <td>
+                    <div className="action-buttons">
+                      <button className="btn-icon edit" title="Editar" onClick={() => abrirModalEditar('treino', treino)}>
+                        <Edit3 size={16} />
+                      </button>
+                      <button className="btn-icon delete" title="Excluir" onClick={() => handleDeletarTreino(treino.id)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* --- MODAL DE CRIAR OU EDITAR --- */}
       <AnimatePresence>
         {modalAberto && (
           <div className="modal-overlay">
@@ -258,79 +515,140 @@ const [alunoEditando, setAlunoEditando] = useState(null);
               exit={{ opacity: 0, scale: 0.9 }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3>{alunoEditando ? 'Editar Aluno' : 'Novo Aluno'}</h3>
+                <h3>{itemEditando ? `Editar ${modalTipo === 'aluno' ? 'Aluno' : modalTipo === 'plano' ? 'Plano' : 'Treino'}` : `Novo ${modalTipo === 'aluno' ? 'Aluno' : modalTipo === 'plano' ? 'Plano' : 'Treino'}`}</h3>
                 <button
                   className="btn-icon"
-                  onClick={() => setModalAberto(false)}
+                  onClick={fecharModal}
                   style={{ border: 'none' }}
                 >
                   <X size={20} />
                 </button>
               </div>
+              {modalErro && <div className="error-msg" style={{ marginBottom: '0' }}>{modalErro}</div>}
               <form onSubmit={handleSalvar} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {/* Campo Nome */}
                 <div className="form-group">
-                  <label htmlFor="nome">Nome Completo</label>
+                  <label htmlFor="nome">Nome</label>
                   <input
                     type="text"
                     id="nome"
+                    name="nome"
                     required
                     className="form-control"
-                    placeholder="Digite o nome completo"
+                    placeholder="Nome"
                     value={formData.nome}
                     onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   />
                 </div>
-                {/* Campo E-mail */}
-                <div className="form-group">
-                  <label htmlFor="email">E-mail</label>
-                  <input
-                    type="email"
-                    id="email"
-                    required
-                    className="form-control"
-                    placeholder="exemplo@academia.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-                {/* Campo Telefone */}
-                <div className="form-group">
-                  <label htmlFor="telefone">Telefone</label>
-                  <input
-                    type="tel"
-                    id="telefone"
-                    required
-                    className="form-control"
-                    placeholder="(00) 00000-0000"
-                    value={formData.telefone}
-                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  />
-                </div>
-                {/* Dropdown de Planos */}
-                <div className="form-group">
-                  <label htmlFor="plano">Plano da Academia</label>
-                  <select
-                    id="plano"
-                    required
-                    className="form-control"
-                    value={formData.planoId}
-                    onChange={(e) => setFormData({ ...formData, planoId: e.target.value })}
-                  >
-                    {planos.length === 0 ? (
-                      <option value="" disabled>Nenhum plano cadastrado</option>
-                    ) : (
-                      planos.map((plano) => (
-                        <option key={plano.id} value={plano.id}>
-                          {plano.nome} — R$ {plano.preco.toFixed(2)}
-                        </option>
-                      ))
-                    )}
-                  </select>
-                </div>
-                {/* Botões do Rodapé do Modal */}
+
+                {modalTipo === 'aluno' && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="email">E-mail</label>
+                      <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        required
+                        className="form-control"
+                        placeholder="exemplo@academia.com"
+                        value={formData.email}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="telefone">Telefone</label>
+                      <input
+                        type="tel"
+                        id="telefone"
+                        name="telefone"
+                        required
+                        className="form-control"
+                        placeholder="(00) 00000-0000"
+                        value={formData.telefone}
+                        onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="plano">Plano</label>
+                      <select
+                        id="plano"
+                        name="planoId"
+                        required
+                        className="form-control"
+                        value={formData.planoId}
+                        onChange={(e) => setFormData({ ...formData, planoId: e.target.value })}
+                      >
+                        {planos.length === 0 ? (
+                          <option value="" disabled>Nenhum plano cadastrado</option>
+                        ) : (
+                          planos.map((plano) => (
+                            <option key={plano.id} value={plano.id}>
+                              {plano.nome} — R$ {plano.preco.toFixed(2)}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {modalTipo === 'plano' && (
+                  <div className="form-group">
+                    <label htmlFor="preco">Preço</label>
+                    <input
+                      type="text"
+                      id="preco"
+                      name="preco"
+                      required
+                      className="form-control"
+                      placeholder="99.90"
+                      value={formData.preco}
+                      onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
+                    />
+                  </div>
+                )}
+
+                {modalTipo === 'treino' && (
+                  <>
+                    <div className="form-group">
+                      <label htmlFor="descricao">Descrição</label>
+                      <textarea
+                        id="descricao"
+                        name="descricao"
+                        required
+                        className="form-control"
+                        placeholder="Descreva o treino"
+                        value={formData.descricao}
+                        onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                        rows={4}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label htmlFor="aluno">Aluno</label>
+                      <select
+                        id="aluno"
+                        name="alunoId"
+                        required
+                        className="form-control"
+                        value={formData.alunoId}
+                        onChange={(e) => setFormData({ ...formData, alunoId: e.target.value })}
+                      >
+                        {alunos.length === 0 ? (
+                          <option value="" disabled>Nenhum aluno cadastrado</option>
+                        ) : (
+                          alunos.map((aluno) => (
+                            <option key={aluno.id} value={aluno.id}>
+                              {aluno.nome}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+                  </>
+                )}
+
                 <div className="modal-actions">
-                  <button type="button" className="btn-secondary" onClick={() => setModalAberto(false)}>
+                  <button type="button" className="btn-secondary" onClick={fecharModal}>
                     Cancelar
                   </button>
                   <button type="submit" className="btn-primary">
