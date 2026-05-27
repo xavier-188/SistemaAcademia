@@ -1,5 +1,5 @@
 .dashboard-container {
-  padding: 24px;
+  padding: 2rem 24px 24px 24px;
   text-align: left;
   display: flex;
   flex-direction: column;
@@ -9,6 +9,8 @@
 /* Título Principal */
 .dashboard-header h1 {
   margin: 0;
+  margin-block-start: 0;
+  margin-block-end: 0;
   font-size: 2.2rem;
   background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
   -webkit-background-clip: text;
@@ -300,7 +302,9 @@
 }
 
 /* Mensagens de Carregamento e Vazio */
-.loading, .error-msg, .empty-msg {
+.loading,
+.error-msg,
+.empty-msg {
   padding: 30px;
   text-align: center;
   color: var(--text);

@@ -1,302 +1,301 @@
-import React, {useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {Users, Award, Activity, Plus, Trash2, Edit3, X, Loader2} from "lucide-react";
+import { Users, Award, Activity, Plus, Trash2, Edit3, X, Loader2 } from "lucide-react";
 import api from "../services/api";
+import { useAuth } from '../context/AuthContext';
 import './DashboardAlunos.css';
 
 export default function DashboardAlunos() {
-    const [alunos, setAlunos] = useState([]);
-    const [planos, setPlanos] = useState([]);
-    const [treinos, setTreinos] = useState([]);
-    const [totalTreinos, setTotalTreinos] = useState(0);
-    const [loading, setLoading] = useState(true);
-    const [erro, setErro] = useState('');
-    const [login, setLogin] = useState('');
-    const [senha, setSenha] = useState('');
-    const [autenticado, setAutenticado] = useState(!!localStorage.getItem('token'));
- 
-    // busca e filtro
-    const [busca, setBusca] = useState('');
+  const [alunos, setAlunos] = useState([]);
+  const [planos, setPlanos] = useState([]);
+  const [treinos, setTreinos] = useState([]);
+  const [totalTreinos, setTotalTreinos] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState('');
+  const [login, setLogin] = useState('');
+  const [senha, setSenha] = useState('');
+  const { autenticado, login: fazerLogin, logout } = useAuth();
 
-    // Modal cadastro
-    const [modalAberto, setModalAberto] = useState(false);
-    const [modalTipo, setModalTipo] = useState('');
-    const [itemEditando, setItemEditando] = useState(null);
-    const [modalErro, setModalErro] = useState('');
+  // busca e filtro
+  const [busca, setBusca] = useState('');
 
-    const [formData, setFormData] = useState({
-        nome: '',
-        email: '',
-        telefone: '',
-        planoId: '',
-        preco: '',
-        descricao: '',
-        alunoId: ''
-    });
+  // Modal cadastro
+  const [modalAberto, setModalAberto] = useState(false);
+  const [modalTipo, setModalTipo] = useState('');
+  const [itemEditando, setItemEditando] = useState(null);
+  const [modalErro, setModalErro] = useState('');
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        setAutenticado(false);
-        setAlunos([]);
-        setPlanos([]);
-        setTreinos([]);
-        setTotalTreinos(0);
-        setLoading(false);
-    };
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    planoId: '',
+    preco: '',
+    descricao: '',
+    alunoId: ''
+  });
 
-    const carregarDados = async () => {
-        setLoading(true);
-        setErro('');
-        try {
-            // fazendo requisicao para buscar alunos planos e treinos
-            const [alunosRes, planosRes, treinosRes] = await Promise.all([
-                api.get('/Alunos'), 
-                api.get('/Planos'), 
-                api.get('/Treinos'), 
-            ]);
-            
-            setAlunos(alunosRes.data);
-            setPlanos(planosRes.data);
-            setTreinos(treinosRes.data);
-            setTotalTreinos(treinosRes.data.length);
-        } catch (err) {
-            console.error(err);
-            if (err?.response?.status === 401 || err?.response?.status === 403) {
-                setErro('Sessão expirada ou não autorizada. Faça login novamente.');
-                handleLogout();
-            } else {
-                setErro('Erro ao carregar dados. Por favor, tente novamente mais tarde.');
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+  const handleLogout = () => {
+    logout();
+    setAlunos([]);
+    setPlanos([]);
+    setTreinos([]);
+    setTotalTreinos(0);
+    setLoading(false);
+  };
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            carregarDados();
-        } else {
-            setLoading(false);
-        }
-    }, []);
+  const carregarDados = async () => {
+    setLoading(true);
+    setErro('');
+    try {
+      // fazendo requisicao para buscar alunos planos e treinos
+      const [alunosRes, planosRes, treinosRes] = await Promise.all([
+        api.get('/Alunos'),
+        api.get('/Planos'),
+        api.get('/Treinos'),
+      ]);
 
-    // funções de ação
-    const handleDeletarAluno = async (id) => {
-        if (!window.confirm('Tem certeza que deseja deletar este aluno?')) return;
-
-        try {
-            await api.delete(`/Alunos/${id}`);
-            setAlunos(alunos.filter(aluno => aluno.id !== id));
-            setTreinos(treinos.filter(treino => treino.alunoId !== id));
-        } catch (err) {
-            console.error(err);
-            alert('Erro ao deletar aluno. Por favor, tente novamente.');
-        }
-    };
-
-    const handleDeletarPlano = async (id) => {
-        if (!window.confirm('Tem certeza que deseja deletar este plano?')) return;
-
-        try {
-            await api.delete(`/Planos/${id}`);
-            setPlanos(planos.filter(plano => plano.id !== id));
-        } catch (err) {
-            console.error(err);
-            const mensagem = err?.response?.data?.mensagem || 'Erro ao deletar plano. Por favor, tente novamente.';
-            alert(mensagem);
-        }
-    };
-
-    const handleDeletarTreino = async (id) => {
-        if (!window.confirm('Tem certeza que deseja deletar este treino?')) return;
-
-        try {
-            await api.delete(`/Treinos/${id}`);
-            setTreinos(treinos.filter(treino => treino.id !== id));
-            setTotalTreinos(prev => Math.max(prev - 1, 0));
-        } catch (err) {
-            console.error(err);
-            alert('Erro ao deletar treino. Por favor, tente novamente.');
-        }
-    };
-
-    const abrirModalCriar = (tipo) => {
-        setModalTipo(tipo);
-        setItemEditando(null);
-        setModalErro('');
-        setFormData({
-            nome: '',
-            email: '',
-            telefone: '',
-            planoId: tipo === 'aluno' && planos.length > 0 ? planos[0].id : '',
-            preco: '',
-            descricao: '',
-            alunoId: tipo === 'treino' && alunos.length > 0 ? alunos[0].id : ''
-        });
-        setModalAberto(true);
-    };
-
-    const abrirModalEditar = (tipo, item) => {
-        setModalTipo(tipo);
-        setItemEditando(item);
-        setModalErro('');
-        setFormData({
-            nome: item.nome || '',
-            email: item.email || '',
-            telefone: item.telefone || '',
-            planoId: item.planoId !== undefined ? String(item.planoId) : (planos.length > 0 ? String(planos[0].id) : ''),
-            preco: item.preco !== undefined ? String(item.preco) : '',
-            descricao: item.descricao || '',
-            alunoId: item.alunoId !== undefined ? String(item.alunoId) : (alunos.length > 0 ? String(alunos[0].id) : '')
-        });
-        setModalAberto(true);
-    };
-
-    const fecharModal = () => {
-        setModalAberto(false);
-        setModalTipo('');
-        setItemEditando(null);
-        setModalErro('');
-    };
-
-    const handleSalvar = async (e) => {
-        e.preventDefault();
-        setModalErro('');
-
-        try {
-            if (modalTipo === 'aluno') {
-                const payload = {
-                    nome: formData.nome,
-                    email: formData.email,
-                    telefone: formData.telefone,
-                    planoId: parseInt(formData.planoId, 10)
-                };
-
-                if (itemEditando) {
-                    await api.put(`/Alunos/${itemEditando.id}`, payload);
-                } else {
-                    await api.post('/Alunos', payload);
-                }
-            }
-
-            if (modalTipo === 'plano') {
-                const preco = parseFloat(formData.preco.replace(',', '.'));
-                if (Number.isNaN(preco)) {
-                    setModalErro('Preço inválido. Informe um valor numérico.');
-                    return;
-                }
-
-                const payload = {
-                    nome: formData.nome,
-                    preco
-                };
-
-                if (itemEditando) {
-                    await api.put(`/Planos/${itemEditando.id}`, payload);
-                } else {
-                    await api.post('/Planos', payload);
-                }
-            }
-
-            if (modalTipo === 'treino') {
-                const payload = {
-                    nome: formData.nome,
-                    descricao: formData.descricao,
-                    alunoId: parseInt(formData.alunoId, 10)
-                };
-
-                if (itemEditando) {
-                    await api.put(`/Treinos/${itemEditando.id}`, payload);
-                } else {
-                    await api.post('/Treinos', payload);
-                }
-            }
-
-            fecharModal();
-            carregarDados();
-        } catch (err) {
-            console.error(err);
-            const mensagem = err?.response?.data?.mensagem || 'Erro ao salvar. Por favor, tente novamente.';
-            setModalErro(mensagem);
-        }
-    };
-
-    const handleLoginSubmit = async (e) => {
-        e.preventDefault();
-        setErro('');
-        setLoading(true);
-
-        try {
-            const response = await api.post('/Auth/login', {
-                login,
-                senha
-            });
-
-            localStorage.setItem('token', response.data.token);
-            setAutenticado(true);
-            setLogin('');
-            setSenha('');
-            carregarDados();
-        } catch (err) {
-            console.error(err);
-            const mensagem = err?.response?.data?.mensagem || 'Erro ao fazer login. Verifique suas credenciais.';
-            setErro(mensagem);
-            setLoading(false);
-        }
-    };
-
-    const alunosFiltrados = alunos.filter(aluno => 
-        aluno.nome.toLowerCase().includes(busca.toLowerCase()) ||
-        aluno.email.toLowerCase().includes(busca.toLowerCase())
-    );
-
-    if (!autenticado) {
-        return (
-            <div className="dashboard-container">
-                <div className="dashboard-header">
-                    <h1>Entrar na API da Academia</h1>
-                    <p>Faça login para sincronizar os dados do dashboard com a API.</p>
-                </div>
-                <div className="students-section">
-                    <div className="form-card">
-                        <form onSubmit={handleLoginSubmit}>
-                            <div className="form-group">
-                                <label htmlFor="login">Login</label>
-                                <input
-                                    type="text"
-                                    id="login"
-                                    value={login}
-                                    required
-                                    className="form-control"
-                                    onChange={(e) => setLogin(e.target.value)}
-                                />
-                            </div>
-                            <div className="form-group">
-                                <label htmlFor="senha">Senha</label>
-                                <input
-                                    type="password"
-                                    id="senha"
-                                    value={senha}
-                                    required
-                                    className="form-control"
-                                    onChange={(e) => setSenha(e.target.value)}
-                                />
-                            </div>
-                            {erro && <div className="error-msg">{erro}</div>}
-                            <div className="modal-actions">
-                                <button type="submit" className="btn-primary" disabled={loading}>
-                                    {loading ? 'Entrando...' : 'Entrar'}
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        );
+      setAlunos(alunosRes.data);
+      setPlanos(planosRes.data);
+      setTreinos(treinosRes.data);
+      setTotalTreinos(treinosRes.data.length);
+    } catch (err) {
+      console.error(err);
+      if (err?.response?.status === 401 || err?.response?.status === 403) {
+        setErro('Sessão expirada ou não autorizada. Faça login novamente.');
+        handleLogout();
+      } else {
+        setErro('Erro ao carregar dados. Por favor, tente novamente mais tarde.');
+      }
+    } finally {
+      setLoading(false);
     }
+  };
 
-   return (
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      carregarDados();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  // funções de ação
+  const handleDeletarAluno = async (id) => {
+    if (!window.confirm('Tem certeza que deseja deletar este aluno?')) return;
+
+    try {
+      await api.delete(`/Alunos/${id}`);
+      setAlunos(alunos.filter(aluno => aluno.id !== id));
+      setTreinos(treinos.filter(treino => treino.alunoId !== id));
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao deletar aluno. Por favor, tente novamente.');
+    }
+  };
+
+  const handleDeletarPlano = async (id) => {
+    if (!window.confirm('Tem certeza que deseja deletar este plano?')) return;
+
+    try {
+      await api.delete(`/Planos/${id}`);
+      setPlanos(planos.filter(plano => plano.id !== id));
+    } catch (err) {
+      console.error(err);
+      const mensagem = err?.response?.data?.mensagem || 'Erro ao deletar plano. Por favor, tente novamente.';
+      alert(mensagem);
+    }
+  };
+
+  const handleDeletarTreino = async (id) => {
+    if (!window.confirm('Tem certeza que deseja deletar este treino?')) return;
+
+    try {
+      await api.delete(`/Treinos/${id}`);
+      setTreinos(treinos.filter(treino => treino.id !== id));
+      setTotalTreinos(prev => Math.max(prev - 1, 0));
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao deletar treino. Por favor, tente novamente.');
+    }
+  };
+
+  const abrirModalCriar = (tipo) => {
+    setModalTipo(tipo);
+    setItemEditando(null);
+    setModalErro('');
+    setFormData({
+      nome: '',
+      email: '',
+      telefone: '',
+      planoId: tipo === 'aluno' && planos.length > 0 ? planos[0].id : '',
+      preco: '',
+      descricao: '',
+      alunoId: tipo === 'treino' && alunos.length > 0 ? alunos[0].id : ''
+    });
+    setModalAberto(true);
+  };
+
+  const abrirModalEditar = (tipo, item) => {
+    setModalTipo(tipo);
+    setItemEditando(item);
+    setModalErro('');
+    setFormData({
+      nome: item.nome || '',
+      email: item.email || '',
+      telefone: item.telefone || '',
+      planoId: item.planoId !== undefined ? String(item.planoId) : (planos.length > 0 ? String(planos[0].id) : ''),
+      preco: item.preco !== undefined ? String(item.preco) : '',
+      descricao: item.descricao || '',
+      alunoId: item.alunoId !== undefined ? String(item.alunoId) : (alunos.length > 0 ? String(alunos[0].id) : '')
+    });
+    setModalAberto(true);
+  };
+
+  const fecharModal = () => {
+    setModalAberto(false);
+    setModalTipo('');
+    setItemEditando(null);
+    setModalErro('');
+  };
+
+  const handleSalvar = async (e) => {
+    e.preventDefault();
+    setModalErro('');
+
+    try {
+      if (modalTipo === 'aluno') {
+        const payload = {
+          nome: formData.nome,
+          email: formData.email,
+          telefone: formData.telefone,
+          planoId: parseInt(formData.planoId, 10)
+        };
+
+        if (itemEditando) {
+          await api.put(`/Alunos/${itemEditando.id}`, payload);
+        } else {
+          await api.post('/Alunos', payload);
+        }
+      }
+
+      if (modalTipo === 'plano') {
+        const preco = parseFloat(formData.preco.replace(',', '.'));
+        if (Number.isNaN(preco)) {
+          setModalErro('Preço inválido. Informe um valor numérico.');
+          return;
+        }
+
+        const payload = {
+          nome: formData.nome,
+          preco
+        };
+
+        if (itemEditando) {
+          await api.put(`/Planos/${itemEditando.id}`, payload);
+        } else {
+          await api.post('/Planos', payload);
+        }
+      }
+
+      if (modalTipo === 'treino') {
+        const payload = {
+          nome: formData.nome,
+          descricao: formData.descricao,
+          alunoId: parseInt(formData.alunoId, 10)
+        };
+
+        if (itemEditando) {
+          await api.put(`/Treinos/${itemEditando.id}`, payload);
+        } else {
+          await api.post('/Treinos', payload);
+        }
+      }
+
+      fecharModal();
+      carregarDados();
+    } catch (err) {
+      console.error(err);
+      const mensagem = err?.response?.data?.mensagem || 'Erro ao salvar. Por favor, tente novamente.';
+      setModalErro(mensagem);
+    }
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setErro('');
+    setLoading(true);
+
+    try {
+      const response = await api.post('/Auth/login', {
+        login,
+        senha
+      });
+
+      fazerLogin(response.data.token);
+      setLogin('');
+      setSenha('');
+      carregarDados();
+    } catch (err) {
+      console.error(err);
+      const mensagem = err?.response?.data?.mensagem || 'Erro ao fazer login. Verifique suas credenciais.';
+      setErro(mensagem);
+      setLoading(false);
+    }
+  };
+
+  const alunosFiltrados = alunos.filter(aluno =>
+    aluno.nome.toLowerCase().includes(busca.toLowerCase()) ||
+    aluno.email.toLowerCase().includes(busca.toLowerCase())
+  );
+
+  if (!autenticado) {
+    return (
+      <div className="dashboard-container">
+        <div className="dashboard-header">
+          <h1>Entrar na API da Academia</h1>
+          <p>Faça login para sincronizar os dados do dashboard com a API.</p>
+        </div>
+        <div className="students-section">
+          <div className="form-card">
+            <form onSubmit={handleLoginSubmit}>
+              <div className="form-group">
+                <label htmlFor="login">Login</label>
+                <input
+                  type="text"
+                  id="login"
+                  value={login}
+                  required
+                  className="form-control"
+                  onChange={(e) => setLogin(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="senha">Senha</label>
+                <input
+                  type="password"
+                  id="senha"
+                  value={senha}
+                  required
+                  className="form-control"
+                  onChange={(e) => setSenha(e.target.value)}
+                />
+              </div>
+              {erro && <div className="error-msg">{erro}</div>}
+              <div className="modal-actions">
+                <button type="submit" className="btn-primary" disabled={loading}>
+                  {loading ? 'Entrando...' : 'Entrar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="dashboard-container">
       {/* Cabeçalho */}
       <div className="dashboard-header">
@@ -304,7 +303,7 @@ export default function DashboardAlunos() {
         <p>Olá Gerente! Gerencie os indicadores gerais e a ficha de alunos matriculados.</p>
       </div>
 
-            {/* --- CARDS DE ESTATÍSTICA (DASHBOARD) --- */}
+      {/* --- CARDS DE ESTATÍSTICA (DASHBOARD) --- */}
       <div className="stats-grid">
         {/* Card Alunos */}
         <div className="stat-card">
@@ -342,7 +341,7 @@ export default function DashboardAlunos() {
       <div className="students-section">
         <div className="section-header">
           <h2>Alunos Matriculados</h2>
-          
+
           <div className="controls">
             {/* Campo de Busca */}
             <div style={{ position: 'relative' }}>
