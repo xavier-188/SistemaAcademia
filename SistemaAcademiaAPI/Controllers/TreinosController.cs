@@ -10,18 +10,22 @@ namespace SistemaAcademiaAPI.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 [ApiController]
-public class TreinosController : ControllerBase {
+public class TreinosController : ControllerBase
+{
     private readonly AppDbContext _context;
 
-    public TreinosController(AppDbContext context) {
+    public TreinosController(AppDbContext context)
+    {
         _context = context;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetTreinos() {
+    public async Task<IActionResult> GetTreinos()
+    {
         var treinos = await _context.Treinos
             .Include(t => t.Aluno)
-            .Select(t => new TreinoDto {
+            .Select(t => new TreinoDto
+            {
                 Id = t.Id,
                 Nome = t.Nome,
                 Descricao = t.Descricao,
@@ -34,7 +38,8 @@ public class TreinosController : ControllerBase {
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetTreino(int id) {
+    public async Task<IActionResult> GetTreino(int id)
+    {
         var treino = await _context.Treinos
             .Include(t => t.Aluno)
             .FirstOrDefaultAsync(t => t.Id == id);
@@ -42,7 +47,8 @@ public class TreinosController : ControllerBase {
         if (treino == null)
             return NotFound(new { mensagem = "Treino não encontrado." });
 
-        return Ok(new TreinoDto {
+        return Ok(new TreinoDto
+        {
             Id = treino.Id,
             Nome = treino.Nome,
             Descricao = treino.Descricao,
@@ -52,7 +58,8 @@ public class TreinosController : ControllerBase {
     }
 
     [HttpPost]
-    public async Task<IActionResult> PostTreino(TreinoCreateDto dto) {
+    public async Task<IActionResult> PostTreino(TreinoCreateDto dto)
+    {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
@@ -60,7 +67,8 @@ public class TreinosController : ControllerBase {
         if (!alunoExiste)
             return BadRequest(new { mensagem = "O Aluno informado não existe." });
 
-        var treino = new Treino {
+        var treino = new Treino
+        {
             Nome = dto.Nome,
             Descricao = dto.Descricao,
             AlunoId = dto.AlunoId
@@ -69,7 +77,8 @@ public class TreinosController : ControllerBase {
         _context.Treinos.Add(treino);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetTreino), new { id = treino.Id }, new TreinoDto {
+        return CreatedAtAction(nameof(GetTreino), new { id = treino.Id }, new TreinoDto
+        {
             Id = treino.Id,
             Nome = treino.Nome,
             Descricao = treino.Descricao,
@@ -79,7 +88,8 @@ public class TreinosController : ControllerBase {
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutTreino(int id, TreinoUpdateDto dto) {
+    public async Task<IActionResult> PutTreino(int id, TreinoUpdateDto dto)
+    {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
@@ -101,7 +111,8 @@ public class TreinosController : ControllerBase {
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteTreino(int id) {
+    public async Task<IActionResult> DeleteTreino(int id)
+    {
         var treino = await _context.Treinos.FindAsync(id);
         if (treino == null)
             return NotFound(new { mensagem = "Treino não encontrado." });

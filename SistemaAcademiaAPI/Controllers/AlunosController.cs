@@ -59,13 +59,13 @@ public class AlunosController : ControllerBase
             PlanoId = aluno.PlanoId,
             PlanoNome = aluno.Plano!.Nome,
             Treinos = aluno.Treinos!.Select(t => new TreinoDto
-              {
-                  Id = t.Id,
-                  Nome = t.Nome,
-                  Descricao = t.Descricao,
-                  AlunoId = t.AlunoId,
-                  AlunoNome = aluno.Nome
-              }).ToList()
+            {
+                Id = t.Id,
+                Nome = t.Nome,
+                Descricao = t.Descricao,
+                AlunoId = t.AlunoId,
+                AlunoNome = aluno.Nome
+            }).ToList()
         });
     }
 

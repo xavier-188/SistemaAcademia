@@ -9,17 +9,20 @@ namespace SistemaAcademiaAPI.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]
-public class AuthController : ControllerBase {
+public class AuthController : ControllerBase
+{
     private readonly AppDbContext _context;
     private readonly TokenService _tokenService;
 
-    public AuthController(AppDbContext context, TokenService tokenService) {
+    public AuthController(AppDbContext context, TokenService tokenService)
+    {
         _context = context;
         _tokenService = tokenService;
     }
 
     [HttpPost("registrar")]
-    public async Task<IActionResult> Registrar([FromBody] UsuarioCreateDto dto) {
+    public async Task<IActionResult> Registrar([FromBody] UsuarioCreateDto dto)
+    {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
@@ -29,7 +32,8 @@ public class AuthController : ControllerBase {
         if (_context.Usuarios.Any(u => u.Login == dto.Login))
             return BadRequest(new { mensagem = "Este login já está em uso." });
 
-        var usuario = new Usuario {
+        var usuario = new Usuario
+        {
             Login = dto.Login,
             SenhaHash = BCrypt.Net.BCrypt.HashPassword(dto.Senha)
         };
@@ -41,7 +45,8 @@ public class AuthController : ControllerBase {
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto) {
+    public async Task<IActionResult> Login([FromBody] LoginDto dto)
+    {
         var usuario = await _context.Usuarios
             .FirstOrDefaultAsync(u => u.Login == dto.Login);
 

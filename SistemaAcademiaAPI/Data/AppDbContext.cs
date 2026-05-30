@@ -36,7 +36,7 @@ namespace SistemaAcademiaAPI.Data
                 .HasPrecision(18, 2);
 
             // 3. REGRAS DE INTEGRIDADE REFERENCIAL (Relacionamentos)
-            
+
             // Relacionamento Aluno -> Plano (1:N)
             // Deleção Restrita: Impede que um plano seja apagado se houver alunos ativos vinculados a ele.
             // Protege a consistência histórica e financeira dos dados.
@@ -56,4 +56,4 @@ namespace SistemaAcademiaAPI.Data
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }
-}
+}

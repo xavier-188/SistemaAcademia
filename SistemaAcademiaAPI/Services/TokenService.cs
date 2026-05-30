@@ -5,14 +5,17 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace SistemaAcademiaAPI.Services;
 
-public class TokenService {
+public class TokenService
+{
     private readonly IConfiguration _config;
 
-    public TokenService(IConfiguration config) {
+    public TokenService(IConfiguration config)
+    {
         _config = config;
     }
 
-    public string GenerateToken(string login) {
+    public string GenerateToken(string login)
+    {
         var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"]!);
         var claims = new[] {
             new Claim(JwtRegisteredClaimNames.Sub, login),

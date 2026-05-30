@@ -2,7 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAcademiaAPI.DTOs;
 
-public class TreinoCreateDto {
+public class TreinoCreateDto
+{
     [Required(ErrorMessage = "O nome é obrigatório.")]
     public string Nome { get; set; } = string.Empty;
 
@@ -15,7 +16,8 @@ public class TreinoCreateDto {
 
 public class TreinoUpdateDto : TreinoCreateDto { }
 
-public class TreinoDto {
+public class TreinoDto
+{
     public int Id { get; set; }
     public string Nome { get; set; } = string.Empty;
     public string Descricao { get; set; } = string.Empty;

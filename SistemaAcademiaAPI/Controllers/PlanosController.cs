@@ -10,17 +10,21 @@ namespace SistemaAcademiaAPI.Controllers;
 [Authorize]
 [Route("api/[controller]")]
 [ApiController]
-public class PlanosController : ControllerBase {
+public class PlanosController : ControllerBase
+{
     private readonly AppDbContext _context;
 
-    public PlanosController(AppDbContext context) {
+    public PlanosController(AppDbContext context)
+    {
         _context = context;
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetPlanos() {
+    public async Task<IActionResult> GetPlanos()
+    {
         var planos = await _context.Planos
-            .Select(p => new PlanoDto {
+            .Select(p => new PlanoDto
+            {
                 Id = p.Id,
                 Nome = p.Nome,
                 Preco = p.Preco,
@@ -31,13 +35,15 @@ public class PlanosController : ControllerBase {
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetPlano(int id) {
+    public async Task<IActionResult> GetPlano(int id)
+    {
         var plano = await _context.Planos.FindAsync(id);
 
         if (plano == null)
             return NotFound(new { mensagem = "Plano não encontrado." });
 
-        return Ok(new PlanoDto {
+        return Ok(new PlanoDto
+        {
             Id = plano.Id,
             Nome = plano.Nome,
             Preco = plano.Preco,
@@ -45,11 +51,13 @@ public class PlanosController : ControllerBase {
     }
 
     [HttpPost]
-    public async Task<IActionResult> PostPlano(PlanoCreateDto dto) {
+    public async Task<IActionResult> PostPlano(PlanoCreateDto dto)
+    {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
-        var plano = new Plano {
+        var plano = new Plano
+        {
             Nome = dto.Nome,
             Preco = dto.Preco,
         };
@@ -57,7 +65,8 @@ public class PlanosController : ControllerBase {
         _context.Planos.Add(plano);
         await _context.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetPlano), new { id = plano.Id }, new PlanoDto {
+        return CreatedAtAction(nameof(GetPlano), new { id = plano.Id }, new PlanoDto
+        {
             Id = plano.Id,
             Nome = plano.Nome,
             Preco = plano.Preco,
@@ -65,7 +74,8 @@ public class PlanosController : ControllerBase {
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> PutPlano(int id, PlanoUpdateDto dto) {
+    public async Task<IActionResult> PutPlano(int id, PlanoUpdateDto dto)
+    {
         if (!ModelState.IsValid)
             return BadRequest(ModelState);
 
@@ -82,7 +92,8 @@ public class PlanosController : ControllerBase {
     }
 
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeletePlano(int id) {
+    public async Task<IActionResult> DeletePlano(int id)
+    {
         var plano = await _context.Planos
             .Include(p => p.Alunos)
             .FirstOrDefaultAsync(p => p.Id == id);

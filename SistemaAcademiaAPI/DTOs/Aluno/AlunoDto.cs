@@ -2,7 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace SistemaAcademiaAPI.DTOs;
 
-public class AlunoCreateDto {
+public class AlunoCreateDto
+{
     [Required(ErrorMessage = "O nome do aluno é obrigatório.")]
     [MaxLength(150)]
     public string Nome { get; set; } = string.Empty;
@@ -20,7 +21,8 @@ public class AlunoCreateDto {
 
 public class AlunoUpdateDto : AlunoCreateDto { }
 
-public class AlunoDto {
+public class AlunoDto
+{
     public int Id { get; set; }
     public string Nome { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
@@ -28,5 +30,5 @@ public class AlunoDto {
     public int PlanoId { get; set; }
     public string PlanoNome { get; set; } = string.Empty;
 
-     public List<TreinoDto> Treinos { get; set; } = new();
+    public List<TreinoDto> Treinos { get; set; } = new();
 }
