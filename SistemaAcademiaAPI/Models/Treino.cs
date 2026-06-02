@@ -17,12 +17,11 @@ namespace SistemaAcademiaAPI.Models
         [MaxLength(1000, ErrorMessage = "A descrição não pode exceder 1000 caracteres.")]
         public string Descricao { get; set; } = string.Empty;
 
-        // Foreign Key (FK) para Aluno
         [Required(ErrorMessage = "O treino deve estar vinculado a um aluno.")]
         public int AlunoId { get; set; }
 
         [ForeignKey("AlunoId")]
-        [JsonIgnore] // Oculta os dados completos do aluno ao listar os treinos para manter o JSON enxuto
+        [JsonIgnore]
         public Aluno? Aluno { get; set; }
     }
 }

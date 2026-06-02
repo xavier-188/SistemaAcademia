@@ -14,11 +14,10 @@ namespace SistemaAcademiaAPI.Models
         public string Nome { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "O preço é obrigatório.")]
-        [Column(TypeName = "decimal(18,2)")] // Define a precisão no banco de dados
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Preco { get; set; }
 
-        // Relacionamento: Um plano tem muitos alunos
-        [JsonIgnore] // Evita loop infinito ao retornar JSON na API
+        [JsonIgnore]
         public ICollection<Aluno>? Alunos { get; set; }
     }
 }

@@ -6,7 +6,6 @@
   gap: 32px;
 }
 
-/* Título Principal */
 .dashboard-header h1 {
   margin: 0;
   margin-block-start: 0;
@@ -23,7 +22,6 @@
   margin-top: 4px;
 }
 
-/* Grid de Cards do Dashboard */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -74,7 +72,6 @@
   color: var(--text-h);
 }
 
-/* Área de Gestão de Alunos */
 .students-section {
   background: var(--bg);
   border: 1px solid var(--border);
@@ -97,7 +94,6 @@
   color: var(--text-h);
 }
 
-/* Controles de Ação (Busca e Botão Novo) */
 .controls {
   display: flex;
   gap: 12px;
@@ -144,7 +140,6 @@
   transform: scale(0.98);
 }
 
-/* Tabela de Alunos */
 .table-responsive {
   overflow-x: auto;
   border-radius: 8px;
@@ -190,7 +185,6 @@
   border: 1px solid var(--accent-border);
 }
 
-/* Botões de Ação na Tabela */
 .action-buttons {
   display: flex;
   gap: 8px;
@@ -223,7 +217,6 @@
   border-color: #ef4444;
 }
 
-/* Modal Overlay (Aparência Glassmorphism) */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -257,7 +250,6 @@
   font-size: 1.3rem;
 }
 
-/* Formulário do Modal */
 .form-group {
   display: flex;
   flex-direction: column;
@@ -305,7 +297,6 @@
   background: var(--code-bg);
 }
 
-/* Mensagens de Carregamento e Vazio */
 .loading,
 .error-msg,
 .empty-msg {

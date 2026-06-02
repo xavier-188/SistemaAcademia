@@ -23,14 +23,12 @@ namespace SistemaAcademiaAPI.Models
         [MaxLength(20)]
         public string Telefone { get; set; } = string.Empty;
 
-        // Foreign Key (FK) para Plano
         [Required(ErrorMessage = "O aluno deve estar vinculado a um plano.")]
         public int PlanoId { get; set; }
 
         [ForeignKey("PlanoId")]
         public Plano? Plano { get; set; }
 
-        // Relacionamento: Um aluno tem muitos treinos
         public ICollection<Treino>? Treinos { get; set; }
     }
 }

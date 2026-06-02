@@ -25,19 +25,16 @@ export default function DashboardAlunos() {
   const [senha, setSenha] = useState("");
   const { autenticado, login: fazerLogin, logout } = useAuth();
 
-  // Controle da tela de Login/Registro
   const [isModoLogin, setIsModoLogin] = useState(true);
 
-  // Campos de Registro
+  
   const [nomeRegistro, setNomeRegistro] = useState("");
   const [loginRegistro, setLoginRegistro] = useState("");
   const [senhaRegistro, setSenhaRegistro] = useState("");
-  const [confirmarSenhaRegistro, setConfirmarSenhaRegistro] = useState(""); // <-- ADICIONE ESTA LINHA
+  const [confirmarSenhaRegistro, setConfirmarSenhaRegistro] = useState("");
 
-  // busca e filtro
   const [busca, setBusca] = useState("");
 
-  // Modal cadastro
   const [modalAberto, setModalAberto] = useState(false);
   const [modalTipo, setModalTipo] = useState("");
   const [itemEditando, setItemEditando] = useState(null);
@@ -66,7 +63,7 @@ export default function DashboardAlunos() {
     setLoading(true);
     setErro("");
     try {
-      // fazendo requisicao para buscar alunos planos e treinos
+      
       const [alunosRes, planosRes, treinosRes] = await Promise.all([
         api.get("/Alunos"),
         api.get("/Planos"),
@@ -101,7 +98,6 @@ export default function DashboardAlunos() {
     }
   }, []);
 
-  // funções de ação
   const handleDeletarAluno = async (id) => {
     if (!window.confirm("Tem certeza que deseja deletar este aluno?")) return;
 
@@ -198,7 +194,7 @@ export default function DashboardAlunos() {
 
     try {
       if (modalTipo === "aluno") {
-        // --- VALIDAÇÕES REACT: E-MAIL E TELEFONE ---
+        
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(formData.email)) {
           setModalErro("Por favor, informe um e-mail em formato válido.");
@@ -212,7 +208,7 @@ export default function DashboardAlunos() {
           );
           return;
         }
-        // -------------------------------------------
+        
 
         const payload = {
           nome: formData.nome,
@@ -231,14 +227,14 @@ export default function DashboardAlunos() {
       if (modalTipo === "plano") {
         const preco = parseFloat(formData.preco.replace(",", "."));
 
-        // --- VALIDAÇÕES REACT: PREÇO VÁLIDO E POSITIVO ---
+        
         if (Number.isNaN(preco) || preco <= 0) {
           setModalErro(
             "Preço inválido. Informe um valor numérico maior que zero.",
           );
           return;
         }
-        // -------------------------------------------------
+        
 
         const payload = {
           nome: formData.nome,
@@ -307,7 +303,7 @@ export default function DashboardAlunos() {
     setErro("");
     setLoading(true);
 
-    // --- VALIDAÇÕES REACT: TAMANHO E CONFIRMAÇÃO DE SENHA ---
+    
     if (senhaRegistro.length < 6) {
       setErro("A senha deve ter no mínimo 6 caracteres.");
       setLoading(false);
@@ -319,23 +315,22 @@ export default function DashboardAlunos() {
       setLoading(false);
       return;
     }
-    // --------------------------------------------------------
+    
 
     try {
       await api.post("/Auth/registrar", {
         nome: nomeRegistro,
         login: loginRegistro,
         senha: senhaRegistro,
-        confirmarSenha: confirmarSenhaRegistro, // <-- ENVIANDO PARA A API
+        confirmarSenha: confirmarSenhaRegistro,
       });
 
       alert("Cadastro realizado com sucesso! Agora você pode fazer login.");
 
-      // Limpa os campos e volta para a tela de login
       setNomeRegistro("");
       setLoginRegistro("");
       setSenhaRegistro("");
-      setConfirmarSenhaRegistro(""); // <-- LIMPA O NOVO CAMPO
+      setConfirmarSenhaRegistro("");
       setIsModoLogin(true);
     } catch (err) {
       console.error(err);
@@ -460,7 +455,7 @@ export default function DashboardAlunos() {
                   />
                 </div>
 
-                {/* --- ADICIONE ESTE NOVO BLOCO --- */}
+                
                 <div className="form-group" style={{ marginBottom: "16px" }}>
                   <label htmlFor="confirmarSenhaRegistro">
                     Confirmar Senha
@@ -474,7 +469,7 @@ export default function DashboardAlunos() {
                     onChange={(e) => setConfirmarSenhaRegistro(e.target.value)}
                   />
                 </div>
-                {/* -------------------------------- */}
+                
 
                 {erro && <div className="error-msg">{erro}</div>}
 
@@ -512,7 +507,7 @@ export default function DashboardAlunos() {
 
   return (
     <div className="dashboard-container">
-      {/* Cabeçalho */}
+      
       <div className="dashboard-header">
         <h1>Dashboard & Alunos</h1>
         <p>
@@ -521,9 +516,9 @@ export default function DashboardAlunos() {
         </p>
       </div>
 
-      {/* --- CARDS DE ESTATÍSTICA (DASHBOARD) --- */}
+      
       <div className="stats-grid">
-        {/* Card Alunos */}
+        
         <div className="stat-card">
           <div className="stat-icon">
             <Users size={24} />
@@ -533,7 +528,7 @@ export default function DashboardAlunos() {
             <p>{alunos.length}</p>
           </div>
         </div>
-        {/* Card Planos */}
+        
         <div className="stat-card">
           <div className="stat-icon">
             <Award size={24} />
@@ -543,7 +538,7 @@ export default function DashboardAlunos() {
             <p>{planos.length}</p>
           </div>
         </div>
-        {/* Card Treinos */}
+        
         <div className="stat-card">
           <div className="stat-icon">
             <Activity size={24} />
@@ -555,13 +550,13 @@ export default function DashboardAlunos() {
         </div>
       </div>
 
-      {/* --- SEÇÃO DE GESTÃO DE ALUNOS --- */}
+      
       <div className="students-section">
         <div className="section-header">
           <h2>Alunos Matriculados</h2>
 
           <div className="controls">
-            {/* Campo de Busca */}
+            
             <div style={{ position: "relative" }}>
               <input
                 type="text"
@@ -571,7 +566,7 @@ export default function DashboardAlunos() {
                 onChange={(e) => setBusca(e.target.value)}
               />
             </div>
-            {/* Botão Novo Aluno */}
+            
             <button
               className="btn-primary"
               onClick={() => abrirModalCriar("aluno")}
@@ -580,7 +575,7 @@ export default function DashboardAlunos() {
             </button>
           </div>
         </div>
-        {/* Lista / Tabela */}
+        
         {loading ? (
           <div className="loading">
             <Loader2
@@ -760,7 +755,7 @@ export default function DashboardAlunos() {
         </div>
       </div>
 
-      {/* --- MODAL DE CRIAR OU EDITAR --- */}
+      
       <AnimatePresence>
         {modalAberto && (
           <div className="modal-overlay">
